@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 import scrapy
 from scrapy.http import Response
 
@@ -16,6 +16,26 @@ class QuotesSpider(scrapy.Spider):
         "FEED_FORMAT": "json"
     }
 
+    def parse_only_quotes(self, response, **kwargs):
+        """parse a one quote"""
+
+        if kwargs:
+            quotes: List = kwargs["quotes"]
+        quotes.extend(response.xpath('//span[@class="text" and @itemprop="text"]/text()')).getall()
+
+        next_page_xpath = '//ul[@class="pager"]//li[@class="next"]/a/@href'
+        next_page_btn_link = response.xpath(next_page_xpath).get()
+
+        if next_page_btn_link:
+            cb_kwargs = {"quotes": quotes}
+            yield response.follow(next_page_btn_link,
+                                  callback=self.parse_only_quotes,
+                                  cb_kwargs=cb_kwargs)
+        else:
+            yield {
+                "quotes": quotes
+            }
+
     def parse(self, response, **kwargs):
         """ type: response: scrapy.http.Response"""
 
@@ -27,7 +47,6 @@ class QuotesSpider(scrapy.Spider):
 
         yield {
             "title": title,
-            "quotes": quotes,
             "top_ten_tags": top_ten_tags
         }
 
@@ -35,4 +54,5 @@ class QuotesSpider(scrapy.Spider):
         next_page_btn_link = response.xpath(next_page_xpath).get()
 
         if next_page_btn_link:
-            yield response.follow(next_page_btn_link, callback=self.parse)
+            cb_kwargs = {"quotes": quotes}
+            yield response.follow(next_page_btn_link, callback=self.parse_only_quotes, cb_kwargs=cb_kwargs)
