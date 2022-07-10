@@ -13,7 +13,13 @@ class QuotesSpider(scrapy.Spider):
 
     custom_settings: Optional[dict] = {
         "FEED_URI": "quotes.json",
-        "FEED_FORMAT": "json"
+        "FEED_FORMAT": "json",
+        "CONCURRENT_REQUESTS": 24,
+        "MEMUSAGE_LIMIT_MB": 2048,
+        "MEMUSAGE_NOTIFY_MAIL": ["joaquin.p.olivera@gmail.com"],
+        "ROBOTSTXT_OBEY": True,
+        "USER_AGENT": "Joaquin",
+        "FEED_EXPORT_ENCODING": "utf-8"
     }
 
     def parse_only_quotes(self, response, **kwargs):
@@ -21,7 +27,7 @@ class QuotesSpider(scrapy.Spider):
 
         if kwargs:
             quotes: List = kwargs["quotes"]
-        quotes.extend(response.xpath('//span[@class="text" and @itemprop="text"]/text()')).getall()
+        quotes.extend(response.xpath('//span[@class="text" and @itemprop="text"]/text()').getall())
 
         next_page_xpath = '//ul[@class="pager"]//li[@class="next"]/a/@href'
         next_page_btn_link = response.xpath(next_page_xpath).get()
