@@ -20,7 +20,17 @@ class CiaSpider(scrapy.Spider):
         links_desclassified = response.xpath(xpath_links_expr).getall()
 
         for link in links_desclassified:
-            yield response.follow(link, callback=self.parse_link)
+            yield response.follow(link, callback=self.parse_link, cb_kwargs={
+                "url": response.urljoin(link)
+            })
 
-    def parse_link(self, response):
-        pass
+    def parse_link(self, response, **kwargs):
+        link = kwargs["url"]
+        title = response.xpath('//h1[@class="documentFirstHeading"]/text()').get()
+        paragraph = response.xpath('//div[@class="field-item even"]//p[not(@class)]/text()').get()
+
+        yield {
+            "url": link,
+            "title": title,
+            "body": paragraph
+        }
